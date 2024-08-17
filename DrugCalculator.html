@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .calculator {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        input, select, button {
+            margin: 10px 0;
+            padding: 5px;
+            width: 100%;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: blue;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+        .input-group input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .input-group span, #drugUnit, #drugUnit option {
+            color: red;
+            font-weight: bold;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+        }
+        .button-group button {
+            width: 48%;
+        }
+        .disclaimer {
+            background-color: #ffffcc;
+            border: 1px solid #ffcc00;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="disclaimer">
+        <strong>Disclaimer:</strong> The calculator is provided as a reference tool only. Not a substitute for professional medical advice. Please verify all calculations independently.
+    </div>
+    
+    <div class="calculator">
+        <h2>Drug Dose Calculator</h2>
+        <form id="doseCalculator">
+            <label for="drugName">Drug Name:</label>
+            <input type="text" id="drugName" list="drugList">
+            <datalist id="drugList">
+                <option value="Midazolam">
+                <option value="Diazepam">
+                <option value="Alfentanyl">
+                <option value="Morphine">
+            </datalist>
+
+            <label for="totalDrug">Total Drug Dosage:</label>
+            <input type="number" id="totalDrug" step="0.000001" required>
+            
+            <label for="drugUnit">Drug Amount Unit:</label>
+            <select id="drugUnit">
+                <option value="mg">mg</option>
+                <option value="mcg">mcg</option>
+            </select>
+
+            <label for="totalVolume">Total Volume (ml):</label>
+            <input type="number" id="totalVolume" step="0.1" required>
+
+            <label for="prescribedDose">Prescribed Dose:</label>
+            <div class="input-group">
+                <input type="number" id="prescribedDose" step="0.000001" required>
+                <span id="prescribedUnitDisplay"></span>
+            </div>
+
+            <label for="dilutionVolume">Dilution Volume (ml):</label>
+            <select id="dilutionVolume">
+                <option value="0">Original Concentration</option>
+                <option value="5">5 ml</option>
+                <option value="10">10 ml</option>
+                <option value="custom">Custom</option>
+            </select>
+            
+            <input type="number" id="customDilution" step="0.1" style="display:none;" placeholder="Enter custom dilution volume">
+
+            <div class="button-group">
+                <button type="submit">Calculate Dose</button>
+                <button type="button" id="resetDoseButton">Reset</button>
+            </div>
+        </form>
+
+        <div id="doseResult" class="result"></div>
+    </div>
+
+    <div class="calculator">
+        <h2>Infusion Rate Calculator</h2>
+        <form id="infusionCalculator">
+            <label for="volumeToInfuse">Volume to Infuse (ml):</label>
+            <input type="number" id="volumeToInfuse" step="0.1" required>
+
+            <label for="infusionTime">Infusion Time:</label>
+            <div class="input-group">
+                <input type="number" id="infusionTime" step="1" required>
+                <select id="timeUnit">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button type="submit">Calculate Rate</button>
+                <button type="button" id="resetInfusionButton">Reset</button>
+            </div>
+        </form>
+
+        <div id="infusionRateResult" class="result"></div>
+    </div>
+
+    <script>
+        // Preset drugs data
+        const presetDrugs = {
+            "Midazolam": { dosage: 5, volume: 1, unit: "mg" },
+            "Diazepam": { dosage: 10, volume: 2, unit: "mg" },
+            "Alfentanyl": { dosage: 1, volume: 2, unit: "mg" },
+            "Morphine": { dosage: 15, volume: 1, unit: "mg" },
+        };
+
+        // Drug Dose Calculator
+        const drugNameInput = document.getElementById('drugName');
+        const totalDrugInput = document.getElementById('totalDrug');
+        const drugUnitSelect = document.getElementById('drugUnit');
+        const totalVolumeInput = document.getElementById('totalVolume');
+        const prescribedUnitDisplay = document.getElementById('prescribedUnitDisplay');
+        const dilutionVolumeSelect = document.getElementById('dilutionVolume');
+        const customDilutionInput = document.getElementById('customDilution');
+        const resetDoseButton = document.getElementById('resetDoseButton');
+
+        drugNameInput.addEventListener('input', function() {
+            const selectedDrug = presetDrugs[this.value];
+            if (selectedDrug) {
+                totalDrugInput.value = selectedDrug.dosage;
+                drugUnitSelect.value = selectedDrug.unit;
+                totalVolumeInput.value = selectedDrug.volume;
+                prescribedUnitDisplay.textContent = selectedDrug.unit;
+            }
+        });
+
+        drugUnitSelect.addEventListener('change', function() {
+            prescribedUnitDisplay.textContent = this.value;
+        });
+
+        dilutionVolumeSelect.addEventListener('change', function() {
+            customDilutionInput.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+
+        prescribedUnitDisplay.textContent = drugUnitSelect.value;
+
+        document.getElementById('doseCalculator').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const totalDrug = parseFloat(totalDrugInput.value);
+            const drugUnit = drugUnitSelect.value;
+            const totalVolume = parseFloat(totalVolumeInput.value);
+            const prescribedDose = parseFloat(document.getElementById('prescribedDose').value);
+            let dilutionVolume = dilutionVolumeSelect.value;
+            
+            if (dilutionVolume === 'custom') {
+                dilutionVolume = parseFloat(customDilutionInput.value);
+            } else {
+                dilutionVolume = parseFloat(dilutionVolume);
+            }
+
+            const totalDrugMcg = drugUnit === 'mg' ? totalDrug * 1000 : totalDrug;
+            const prescribedDoseMcg = drugUnit === 'mg' ? prescribedDose * 1000 : prescribedDose;
+
+            const concentration = totalDrugMcg / totalVolume;
+
+            let result;
+
+            if (dilutionVolume === 0) {
+                result = (prescribedDoseMcg / concentration);
+            } else {
+                const dilutedConcentration = (concentration * totalVolume) / dilutionVolume;
+                result = prescribedDoseMcg / dilutedConcentration;
+            }
+
+            document.getElementById('doseResult').textContent = `Volume to administer: ${result.toFixed(2)} ml`;
+        });
+
+        resetDoseButton.addEventListener('click', function() {
+            document.getElementById('doseCalculator').reset();
+            customDilutionInput.style.display = 'none';
+            document.getElementById('doseResult').textContent = '';
+        });
+
+        // Infusion Rate Calculator
+        document.getElementById('infusionCalculator').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const volumeToInfuse = parseFloat(document.getElementById('volumeToInfuse').value);
+            const infusionTime = parseFloat(document.getElementById('infusionTime').value);
+            const timeUnit = document.getElementById('timeUnit').value;
+
+            let infusionRatePerHour;
+            if (timeUnit === 'minutes') {
+                infusionRatePerHour = (volumeToInfuse / infusionTime) * 60;
+            } else { // hours
+                infusionRatePerHour = volumeToInfuse / infusionTime;
+            }
+
+            document.getElementById('infusionRateResult').textContent = `Infusion Rate: ${infusionRatePerHour.toFixed(2)} ml/hour`;
+        });
+
+        document.getElementById('resetInfusionButton').addEventListener('click', function() {
+            document.getElementById('infusionCalculator').reset();
+            document.getElementById('infusionRateResult').textContent = '';
+        });
+    </script>
+</body>
+</html>
